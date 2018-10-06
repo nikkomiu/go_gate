@@ -85,6 +85,7 @@ func (ctx *RequestContext) ServiceHandler() http.HandlerFunc {
 			return
 		}
 
+		// Copy the body from the client response to the server response
 		io.Copy(w, resp.Body)
 	}
 }

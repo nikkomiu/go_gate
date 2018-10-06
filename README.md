@@ -107,11 +107,135 @@ plugins:
       jwksUrl: https://my.auth0.com/.well-known/jwks.json
 ```
 
+## Built-In Plugins
+
+There are several built-in plugins that serve as a starting point for extending
+the gateway service.
+
+### Head Block
+
+The Head Blocker plugin allows headers for the request going to the backend
+service they were destined for to be removed. It also allows for removing
+headers returning from the backend service going back to the client.
+
+The configuration of this plugin gets done in the plugin's settings section of
+the configuration file:
+
+```yaml
+plugins:
+  - path: lib/head_block.so
+    settings:
+      inbound:
+        - First-Header
+        - Second-Header
+      outbound:
+        - Third-Header
+```
+
+Where `inbound` are the headers coming from the client and going to the backend
+service and `outbound` are the headers coming from the backend and heading back
+to the client.
+
+### JWT Plugin
+
+The JWT plugin is responsible for handling user authentication using JWT and
+a JWKS endpoint that can serve up the x509 public certificate for the JWTs that
+were generated. This is built off of how [Auth0](https://auth0.com) handles
+their JWT validation processes.
+
+It allows for adding the `optionalAuth` paramter to the routes which will allow
+them to not reject unauthenticated users. The default behavior is to **require**
+authentication on all routes. They must explicitly set `optinalAuth` to `true`
+to allow unauthenticated users through.
+
+### Sample Plugin
+
+This plugin is designed to demonstrate the functionality of plugins and give
+some quick guidance on how to create them.
+
 ## Creating a Plugin
 
 Plugins get built as Go plugins which are compiled C libraries. There is an
 example of a plugin at [plugins/sample/sample.go](plugins/sample/sample.go)
 in this project.
+
+### Core
+
+Go requires that all plugins be in their own `main` package and have the
+exported members that they want accessed by the application that consumes them.
+
+There is an internal context that is used on all plugins that allows for data
+to be shared between the functions of a plugin. All lifecycle functions will
+need to be on this struct in order to be read by the application.
+
+The context that all of the functions are built on will need to be exported
+with the name `Plugin`.
+
+```go
+package main
+
+type samplePlugin struct{}
+
+var Plugin struct{}
+```
+
+### Setup Function
+
+The setup function takes in the settings for the plugin from the application
+configuration file. It is primarily used to set up the plugin and do any heavy
+lifting before it starts to take on any requests.
+
+This function will need to take a single parameter of type `interface{}` and be
+on the plugin context or the plugin manager will not load the `Setup` function.
+
+```go
+func (*samplePlugin) Setup(settings interface{}) {
+	log.Println("Do some set up work here...")
+}
+```
+
+**Note:** This function is not required for a plugin to work.
+
+### Pre-Request Function
+
+This function will need to take three parameters of types `http.ResponseWriter`,
+`*http.Request`, and `*settings.RouteSettings` and have a return of `error`
+as well as be located on the plugin context or the plugin manager will not
+load the `PreRequest` function.
+
+If there is an error returned the request will be stopped from reaching the
+backend server that the request was headed to.
+
+```go
+func (*samplePlugin) PreRequest(w http.ResponseWriter, r *http.Request, route *settings.RouteSettings) error {
+	log.Println("In Pre Request...")
+
+	return nil
+}
+```
+
+**Note:** This function is not required for a plugin to work.
+
+### Post-Request Function
+
+This function will need to take three parameters of types `http.ResponseWriter`,
+`*http.Request`, and `*settings.RouteSettings` and have a return of `error`
+as well as be located on the plugin context or the plugin manager will not
+load the `PostRequest` function.
+
+If there is an error returned the request will be stopped returning to the client.
+
+```go
+func (*samplePlugin) PostRequest(w http.ResponseWriter, r *http.Request, route *settings.RouteSettings) error {
+	log.Printf("Running sample post request for %s\n", r.URL.Path)
+
+	return nil
+}
+```
+
+**Note:** This function is not required for a plugin to work.
+
+### Building a Plugin
 
 To build a plugin run:
 
