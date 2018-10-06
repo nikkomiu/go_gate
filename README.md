@@ -57,9 +57,8 @@ There are three different errors that the gateway service will serve itself.
 
 These different errors are:
 
-- **Not Found**: A matching route or service could not be found.
-- **Unauthorized**: A user was not authenticated because the user module returned an error of some kind.
-- **Service Unavaliable**: The backend service could not be contacted to send the request. (i.e. the HTTP client returned an error when trying to send the request)
+- **Not Found:** A matching route or service could not be found.
+- **Service Unavaliable:** The backend service could not be contacted to send the request. (i.e. the HTTP client returned an error when trying to send the request)
 
 Example (using the default values):
 
@@ -69,12 +68,53 @@ errors:
     status: 404
     short: Not Found
     long: Could not find route
-  unauthorized:
-    status: 401
-    short: Authentication Failed
-    long: Could not find or process the authentication
   serviceUnavaliable:
     status: 502
     short: Could Not Process Request
     long: The server was unable to process your request
+```
+
+### Plugins
+
+Plugins allow intercepting requests to backend services and responses back to
+clients. They are able to access the request and response during the Pre-Request
+stage and the Post-Request stage to allow for blocking requests and/or sending
+custom statuses back to users.
+
+Plugins can hook into 3 lifecycle events:
+
+- **Setup:** This function is called during initialization of the server. It will be called before any requests are able to be taken from clients. General setup tasks and heavy, non-request based logic should be placed here.
+- **PreRequest:** This function is called before the request from a client gets sent to the backend service responsible for handling that request. Logic such as authentication should be placed here.
+- **PostRequest:** This function is called after the backend service has responded but before the client has recieved the response. This can be used to intercept a response before it goes out.
+
+Example configuration:
+
+```yaml
+plugins:
+  # Sample Plugin
+  - path: lib/sample.so
+  # Block Headers During Request Lifecycle
+  - path: lib/head_block.so
+    settings:
+      inbound:
+        - X-Some
+      outbound:
+        - X-UserId
+  # Handle JWT authentication
+  - path: lib/jwt.so
+    settings:
+      domain: https://my.auth0.com/
+      jwksUrl: https://my.auth0.com/.well-known/jwks.json
+```
+
+## Creating a Plugin
+
+Plugins get built as Go plugins which are compiled C libraries. There is an
+example of a plugin at [plugins/sample/sample.go](plugins/sample/sample.go)
+in this project.
+
+To build a plugin run:
+
+```
+go build -buildmode=plugin -o lib/my_plugin.so my_plugin/*
 ```

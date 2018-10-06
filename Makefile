@@ -1,4 +1,4 @@
-build: clean get build-bin
+build: clean get build-bin build-plugins
 
 # Get application dependencies
 get:
@@ -9,10 +9,15 @@ build-bin:
 	go build -o bin/$(notdir $(shell pwd)) .
 	chmod +x bin/$(notdir $(shell pwd))
 
+build-plugins:
+	for PLUG in `ls plugins`; do \
+		go build -buildmode=plugin -o lib/$$PLUG.so plugins/$$PLUG/*; \
+	done
+
 # Clean the output files
 clean:
 	go clean -i ./...
-	rm -rf bin
+	rm -rf bin lib
 
 # Run unit and functional tests
 test:

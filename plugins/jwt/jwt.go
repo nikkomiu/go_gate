@@ -1,4 +1,4 @@
-package auth
+package main
 
 import (
 	"crypto/rsa"
@@ -13,10 +13,11 @@ import (
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
+
 	"gitlab.com/nikko.miu/go_gate/pkg/settings"
 )
 
-var domain string
+var authDomain string
 var publicKey *rsa.PublicKey
 var jwksData *jwksKey
 
@@ -39,31 +40,67 @@ type jwksResponse struct {
 	Keys []*jwksKey `json:"keys"`
 }
 
+type errorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
+type authPlugin struct{}
+
 // Setup fetches the JWKS and builds up JWT auth
-func Setup(authSettings *settings.AuthSettings) {
-	client := &http.Client{}
-	resp, err := client.Get(authSettings.JWKSURL)
+func (*authPlugin) Setup(settings interface{}) {
+	authSettings, ok := settings.(map[interface{}]interface{})
+	if !ok {
+		log.Fatalln("Could not convert settings")
+	}
+	jwksURL := authSettings["jwksUrl"].(string)
+	domain := authSettings["domain"].(string)
+
+	// Get the JWKS Config
+	resp, err := http.DefaultClient.Get(jwksURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Close response body when finished
 	defer resp.Body.Close()
 
+	// Read response body
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Parse response body
 	var data jwksResponse
 	json.Unmarshal(body, &data)
 
-	domain = authSettings.Domain
+	authDomain = domain
 	jwksData = data.Keys[0]
 	publicKey = convertKey(jwksData.Certificate[0])
 }
 
-// Validate to determine if user is authenticated
-func Validate(authToken string, authRequred bool) (*Auth0User, error) {
+// PreRequest is the hook to be executed before calling the backing request
+func (*authPlugin) PreRequest(w http.ResponseWriter, r *http.Request, route *settings.RouteSettings) error {
+	user, err := validate(r.Header.Get("Authorization"), !route.OptionalAuth)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+
+		json.NewEncoder(w).Encode(&errorResponse{
+			Error:   "Unauthorized",
+			Message: "Could not validate user credentials",
+		})
+	}
+
+	if user != nil {
+		w.Header().Add("X-UserId", user.Auth0ID)
+	}
+
+	return err
+}
+
+func validate(authToken string, authRequred bool) (*Auth0User, error) {
 	// Get the token from the Authorization header and remove Bearer
 	if authToken != "" {
 		authToken = strings.Split(authToken, " ")[1]
@@ -102,7 +139,7 @@ func parseUser(token *jwt.Token) (*Auth0User, error) {
 		claims := token.Claims.(jwt.MapClaims)
 
 		// Validate the issuer (if there is no issuer the token is invalid)
-		if claims["iss"] != domain {
+		if claims["iss"] != authDomain {
 			return nil, errors.New("Invalid Issuer")
 		}
 
@@ -128,3 +165,10 @@ func convertKey(key string) *rsa.PublicKey {
 
 	return rsaPublicKey
 }
+
+func main() {
+	log.Fatalln("[ ERROR ] This module is not meant to be loaded directly!")
+}
+
+// Plugin for JWT
+var Plugin authPlugin

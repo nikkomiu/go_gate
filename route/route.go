@@ -9,7 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	"gitlab.com/nikko.miu/go_gate/pkg/auth"
+	"gitlab.com/nikko.miu/go_gate/pkg/plugin"
+
 	"gitlab.com/nikko.miu/go_gate/pkg/settings"
 )
 
@@ -54,19 +55,18 @@ func (ctx *RequestContext) ServiceHandler() http.HandlerFunc {
 			return
 		}
 
-		// Validate auth
-		_, err := auth.Validate(r.Header.Get("Authorization"), !foundRoute.OptionalAuth)
-		if err != nil {
-			errorResponse(w, ctx.ErrorListSettings.Unauthorized)
-			return
-		}
-
 		// Build the backend URL path
 		u, _ := url.Parse(strings.TrimPrefix(r.URL.Path, foundRoute.StripPrefix))
 
+		// Handle all pre request plugins
+		err := plugin.HandlePreReq(ctx.Plugins, w, r, foundRoute)
+		if err != nil {
+			return
+		}
+
 		// Build the request
 		req, _ := http.NewRequest(r.Method, svcURL.ResolveReference(u).String(), r.Body)
-		req.Header = r.Header // TODO: Allow blacklisting inbound headers
+		req.Header = r.Header
 
 		// Send the request
 		resp, err := http.DefaultClient.Do(req)
@@ -74,12 +74,17 @@ func (ctx *RequestContext) ServiceHandler() http.HandlerFunc {
 			errorResponse(w, ctx.ErrorListSettings.ServiceUnavaliable)
 			return
 		}
+		r.Header = resp.Header
 
 		// Close the backend response when done
 		defer resp.Body.Close()
 
-		// Respond with backend response
-		r.Header = resp.Header // TODO: Allow blacklisting outbound headers
+		// Handle all post request plugins
+		err = plugin.HandlePostReq(ctx.Plugins, w, r, foundRoute)
+		if err != nil {
+			return
+		}
+
 		io.Copy(w, resp.Body)
 	}
 }

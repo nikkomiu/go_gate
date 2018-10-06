@@ -19,6 +19,7 @@ build:
     name: app
     paths:
       - bin/
+      - lib/
 
 container:
   stage: containerize

@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/spf13/cobra"
 
-	"gitlab.com/nikko.miu/go_gate/pkg/auth"
+	gatePlugin "gitlab.com/nikko.miu/go_gate/pkg/plugin"
 	"gitlab.com/nikko.miu/go_gate/pkg/settings"
 	"gitlab.com/nikko.miu/go_gate/route"
 )
@@ -33,8 +33,8 @@ func runRoot(cmd *cobra.Command, args []string) {
 		appSettings.Port = appPort
 	}
 
-	// Setup Auth
-	auth.Setup(appSettings.Auth)
+	// Setup Plugins
+	gatePlugin.Load(appSettings.Plugins)
 
 	// Setup route handler
 	mux := http.NewServeMux()

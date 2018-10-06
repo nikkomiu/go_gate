@@ -8,12 +8,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// AuthSettings for dealing with Auth0 tokens
-type AuthSettings struct {
-	Domain  string `yaml:"domain"`
-	JWKSURL string `yaml:"jwksUrl"`
-}
-
 // ServiceSettings contain all of the rules for services
 type ServiceSettings struct {
 	Name          string `yaml:"name"`
@@ -40,8 +34,13 @@ type ErrorSettings struct {
 // ErrorListSettings contains the list of avaliable errors from the config
 type ErrorListSettings struct {
 	NotFound           *ErrorSettings `yaml:"notFound"`
-	Unauthorized       *ErrorSettings `yaml:"unauthorized"`
 	ServiceUnavaliable *ErrorSettings `yaml:"serviceUnavaliable"`
+}
+
+// PluginSettings contain all settings related to managing plugin modules
+type PluginSettings struct {
+	Path     string      `yaml:"path"`
+	Settings interface{} `yaml:"settings"`
 }
 
 // Settings are the root configuration settings for the application
@@ -53,9 +52,9 @@ type Settings struct {
 
 	ErrorListSettings *ErrorListSettings `yaml:"errors"`
 
-	Auth     *AuthSettings      `yaml:"auth"`
 	Routes   []*RouteSettings   `yaml:"routes"`
 	Services []*ServiceSettings `yaml:"services"`
+	Plugins  []*PluginSettings  `yaml:"plugins"`
 }
 
 func getDefaultSettings() *Settings {
@@ -64,7 +63,6 @@ func getDefaultSettings() *Settings {
 		ErrorListSettings: &ErrorListSettings{
 			NotFound:           &ErrorSettings{Status: 404, Short: "Not Found", Long: "Could not find route"},
 			ServiceUnavaliable: &ErrorSettings{Status: 502, Short: "Could Not Process Request", Long: "The server was unable to process your request"},
-			Unauthorized:       &ErrorSettings{Status: 401, Short: "Authentication Failed", Long: "Could not find or process the authentication"},
 		},
 	}
 }

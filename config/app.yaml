@@ -1,9 +1,5 @@
 port: 3000
 
-auth:
-  domain: https://tyvoid.auth0.com/
-  jwksUrl: https://tyvoid.auth0.com/.well-known/jwks.json
-
 services:
   - name: images
     url: http://localhost:3100
@@ -18,3 +14,16 @@ routes:
     service: images
     optionalAuth: false # DEFAULT
     stripPrefix: "" # DEFAULT
+
+plugins:
+  # - path: lib/sample.so
+  - path: lib/head_block.so
+    settings:
+      inbound:
+        - X-Some
+      outbound:
+        - X-UserId
+  - path: lib/jwt.so
+    settings:
+      domain: https://my.auth0.com/
+      jwksUrl: https://my.auth0.com/.well-known/jwks.json
