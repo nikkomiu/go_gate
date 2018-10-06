@@ -2,6 +2,29 @@
 
 Gateway service for authenticating and routing microservice applications written in Go.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Configuration](#configuration)
+  - [General](#general)
+  - [Route](#route)
+  - [Service](#service)
+  - [Custom Errors](#custom-errors)
+  - [Plugins](#plugins)
+- [Built-In Plugins](#built-in-plugins)
+  - [Head Block](#head-block)
+  - [JWT Plugin](#jwt-plugin)
+  - [Sample Plugin](#sample-plugin)
+- [Creating a Plugin](#creating-a-plugin)
+  - [Core](#core)
+  - [Setup Function](#setup-function)
+  - [Pre-Request Function](#pre-request-function)
+  - [Post-Request Function](#post-request-function)
+  - [Building a Plugin](#building-a-plugin)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ## Configuration
 
 Configuration of the gateway service is done through the `config/app.yaml` file.
