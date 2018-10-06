@@ -1,4 +1,5 @@
 port: 3000
+
 auth:
   domain: https://tyvoid.auth0.com/
   jwksUrl: https://tyvoid.auth0.com/.well-known/jwks.json
@@ -12,8 +13,8 @@ services:
 routes:
   - path: /recipes/.*
     service: recipes
-    authRequired: false
+    optionalAuth: true
   - path: /images/.*
     service: images
-    authRequired: true # DEFAULT
+    optionalAuth: false # DEFAULT
     stripPrefix: "" # DEFAULT

@@ -3,7 +3,9 @@ package cmd
 import (
 	"log"
 	"net/http"
+	"os"
 
+	"github.com/gorilla/handlers"
 	"github.com/spf13/cobra"
 
 	"gitlab.com/nikko.miu/go_gate/pkg/auth"
@@ -40,9 +42,11 @@ func runRoot(cmd *cobra.Command, args []string) {
 
 	mux.HandleFunc("/", routeContext.ServiceHandler())
 
+	loggedMux := handlers.LoggingHandler(os.Stdout, mux)
+
 	// Start the server
 	log.Printf("Starting server on port %s", appSettings.Port)
-	if err := http.ListenAndServe(":"+appSettings.Port, mux); err != nil {
+	if err := http.ListenAndServe(":"+appSettings.Port, loggedMux); err != nil {
 		log.Panic(err)
 	}
 }
