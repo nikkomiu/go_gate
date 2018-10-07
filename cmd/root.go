@@ -42,11 +42,11 @@ func runRoot(cmd *cobra.Command, args []string) {
 
 	mux.HandleFunc("/", routeContext.ServiceHandler())
 
-	loggedMux := handlers.LoggingHandler(os.Stdout, mux)
+	loggedMux := handlers.CombinedLoggingHandler(os.Stdout, mux)
 
 	// Start the server
 	log.Printf("Starting server on port %s", appSettings.Port)
 	if err := http.ListenAndServe(":"+appSettings.Port, loggedMux); err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 }
