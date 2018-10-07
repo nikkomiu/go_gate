@@ -29,7 +29,7 @@ func runRoot(cmd *cobra.Command, args []string) {
 	appSettings := settings.Load(configFile)
 
 	// Override settings as needed
-	if appPort != "" {
+	if appPort != defaultPort {
 		appSettings.Port = appPort
 	}
 

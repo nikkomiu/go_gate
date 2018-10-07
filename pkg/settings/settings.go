@@ -59,7 +59,6 @@ type Settings struct {
 
 func getDefaultSettings() *Settings {
 	return &Settings{
-		Port: "3000",
 		ErrorListSettings: &ErrorListSettings{
 			NotFound:           &ErrorSettings{Status: 404, Short: "Not Found", Long: "Could not find route"},
 			ServiceUnavaliable: &ErrorSettings{Status: 502, Short: "Could Not Process Request", Long: "The server was unable to process your request"},

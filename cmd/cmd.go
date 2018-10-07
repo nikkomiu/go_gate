@@ -4,14 +4,15 @@ import (
 	"log"
 )
 
+const defaultPort = "3000"
+const appVersion = "0.0.0"
+
 var appPort string
 var configFile string
 
-var appVersion = "0.0.0"
-
 func init() {
-	rootCmd.Flags().StringVar(&configFile, "config", "config/app.yaml", "Configuration file location (default is config/app.yaml)")
-	rootCmd.Flags().StringVar(&appPort, "port", "", "Port number to start the service on")
+	rootCmd.Flags().StringVar(&configFile, "config", "config/app.yaml", "Configuration file location")
+	rootCmd.Flags().StringVar(&appPort, "port", defaultPort, "Port number to start the service on")
 }
 
 // Execute the root command and delegate responsibility to all subcommands
